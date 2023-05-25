@@ -59,19 +59,18 @@ class Downloader:
         return hash_value
 
     def delete_duplicatas(self):
-        if self.flips:
-            image_dict = {}
-            for file_name in os.listdir(self.download_path):
-                file_path = os.path.join(self.download_path, file_name)
-                if os.path.isfile(file_path):
-                    hash_value = self.calculate_hash(file_path)
-                    if hash_value in image_dict:
-                        # Duplicate image found
-                        os.remove(file_path)
-                        #print(f"Duplicate image deleted: {file_path}")
-                    else:
-                        # Unique image
-                        image_dict[hash_value] = file_path
+        image_dict = {}
+        for file_name in os.listdir(self.download_path):
+            file_path = os.path.join(self.download_path, file_name)
+            if os.path.isfile(file_path):
+                hash_value = self.calculate_hash(file_path)
+                if hash_value in image_dict:
+                    # Duplicate image found
+                    os.remove(file_path)
+                    #print(f"Duplicate image deleted: {file_path}")
+                else:
+                    # Unique image
+                    image_dict[hash_value] = file_path
 
     def save_random_flip(self, image_path):
         # Open the image

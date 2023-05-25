@@ -54,7 +54,7 @@ class IznikDataset(Dataset):
             self.images_transformed = []
 
             # Créer une barre de progression avec le nombre total d'itérations
-            progress_bar = tqdm(total=len(self.images_opened), desc='Passage des images à travers DINOv2...')  
+            progress_bar = tqdm(total=len(self.images_opened), desc='Passing images through DINOv2...')  
             
             for image in self.images_opened:
                 result = pretrained_model(self.transform(image).unsqueeze(0).to(device)).squeeze()
@@ -104,7 +104,6 @@ class IznikDataset(Dataset):
             batch = self[i]
             images = torch.stack([self.images_transformed[self.images_list.index(image)] for image in batch['images']]).cuda()
             labels = torch.tensor(batch['labels'], dtype=torch.float32).cuda()
-            progress_bar = tqdm(total=len(images), desc='Gradient update...') 
             for epoch in range(100):
                 
                 # Remise à zéro des gradients
@@ -120,6 +119,5 @@ class IznikDataset(Dataset):
                 loss.backward(retain_graph=True)
                 self.optimizer.step()
                 
-                progress_bar.update(1)
                 #print(f'Loss at epoch {epoch} : {loss.item():.4f}')
                 
