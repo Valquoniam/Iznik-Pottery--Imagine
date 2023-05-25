@@ -1,7 +1,7 @@
 from funcs.downloader import Downloader
 from funcs.dataset import IznikDataset
 import funcs.interface as interface
-
+import funcs.move_dataset as md
 
 def main():
     
@@ -29,7 +29,10 @@ def main():
         if len(dataset) != len(dataset.images_list):
             dataset.learn()    
     
+    md.move_good_images()         
     print("*** DATASET COMPLETED ***")
+    
+    
     
 if __name__ == '__main__':
     main()

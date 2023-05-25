@@ -42,6 +42,8 @@ class IznikDataset(Dataset):
         self.transform = transforms.Compose([
                          transforms.Resize(256),
                          transforms.CenterCrop(224),
+                         transforms.RandomHorizontalFlip(p=0.5),
+                         transforms.RandomVerticalFlip(p=0.5),
                          transforms.ToTensor(),
                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
         
@@ -100,11 +102,11 @@ class IznikDataset(Dataset):
     
     def learn(self):
         
-        for i in range(0,len(self.images_studied)-1,24):
-            batch = self[i]
-            images = torch.stack([self.images_transformed[self.images_list.index(image)] for image in batch['images']]).cuda()
-            labels = torch.tensor(batch['labels'], dtype=torch.float32).cuda()
-            for epoch in range(100):
+        for epoch in range(100):       
+            for i in range(0,len(self.images_studied)-1,24):
+                batch = self[i]
+                images = torch.stack([self.images_transformed[self.images_list.index(image)] for image in batch['images']]).cuda()
+                labels = torch.tensor(batch['labels'], dtype=torch.float32).cuda()
                 
                 # Remise à zéro des gradients
                 self.optimizer.zero_grad()

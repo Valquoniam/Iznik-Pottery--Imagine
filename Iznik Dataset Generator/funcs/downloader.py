@@ -1,8 +1,9 @@
 from bing_image_downloader import downloader
 import os
 from PIL import Image
-import hashlib
 import random
+import numpy as np
+
 
 class Downloader:
     def __init__(self):
@@ -51,65 +52,31 @@ class Downloader:
                     new_file_name = f"img_{i:05d}.jpeg"
                     new_path = os.path.join(self.download_path, new_file_name)
                     os.rename(os.path.join(self.download_path, file_name),new_path)
-   
-    def calculate_hash(self, file_path):
-        with open(file_path, 'rb') as f:
-            image_data = f.read()
-            hash_value = hashlib.md5(image_data).hexdigest()
-        return hash_value
+
 
     def delete_duplicatas(self):
-        image_dict = {}
-        for file_name in os.listdir(self.download_path):
-            file_path = os.path.join(self.download_path, file_name)
-            if os.path.isfile(file_path):
-                hash_value = self.calculate_hash(file_path)
-                if hash_value in image_dict:
-                    # Duplicate image found
-                    os.remove(file_path)
-                    #print(f"Duplicate image deleted: {file_path}")
-                else:
-                    # Unique image
-                    image_dict[hash_value] = file_path
+        hash_values = {}
+        for filename in os.listdir(self.download_path):
+            
+            # Chemin complet de l'image
+            image_path = os.path.join(self.download_path, filename)
+            image = Image.open(image_path)
+            
+            # Redimensionner l'image en 16x16 pixels
+            image = image.resize((50, 50))
+            image_array = np.array(image)
+            flattened_array = image_array.flatten()
+            binary_array = np.packbits(flattened_array)
+            hash_value = binary_array.tobytes().hex()
 
-    def save_random_flip(self, image_path):
-        # Open the image
-        image = Image.open(image_path)
-        
-        # Randomly select the flip types
-        flip_types = random.choices(["horizontal", "vertical", "both"])
-        
-        # Perform the flips
-        flipped_image = image
-        for flip_type in flip_types:
-            if flip_type == "horizontal":
-                flipped_image = flipped_image.transpose(Image.FLIP_LEFT_RIGHT)
-            elif flip_type == "vertical":
-                flipped_image = flipped_image.transpose(Image.FLIP_TOP_BOTTOM)
-            elif flip_type == "both":
-                flipped_image = flipped_image.transpose(Image.FLIP_TOP_BOTTOM)
-                flipped_image = flipped_image.transpose(Image.FLIP_LEFT_RIGHT)
-                
-        # Get the original image name
-        image_name = os.path.basename(image_path)
-        
-        # Construct the flipped image path
-        flipped_image_path = os.path.join(self.download_path, "flipped_" + "_".join(flip_types) + "_" + image_name)
-        
-        # Save the flipped image
-        flipped_image.save(flipped_image_path)
-        
-        #print("Flipped image saved:", flipped_image_path)
-        
+            # Vérifier si le hash value est déjà dans le dictionnaire
+            if hash_value in hash_values:
+                os.remove(image_path)
+                print("Image en doublon supprimée:", filename)
+            else:
+                hash_values[hash_value] = filename
 
-    def random_dataset_modif(self):
-        if self.flips:
-            for file_name in os.listdir(self.download_path):
-                file_path = os.path.join(self.download_path, file_name)
-                is_flipped = random.randint(0,1)
-                
-                if is_flipped:
-                    self.save_random_flip(file_path)               
+                print("Image traitée:", filename)        
                     
     def download_dataset(self):
         
@@ -117,6 +84,5 @@ class Downloader:
         self.download()
         self.treat_images()
         self.delete_duplicatas()
-        self.random_dataset_modif()
         self.delete_duplicatas()
         self.sort_images()

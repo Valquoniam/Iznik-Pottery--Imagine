@@ -115,7 +115,6 @@ def _rien_valider_click():
 
 
 def valider_click():
-    
     E = global_var_E
     global result 
     # Noter les labels dans le fichier texte
