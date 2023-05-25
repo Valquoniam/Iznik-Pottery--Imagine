@@ -120,9 +120,9 @@ def valider_click():
     global result 
     # Noter les labels dans le fichier texte
     for index in range(len(E)): 
-        write_to_file('iznik_labels2.csv', f"{E[index]}, {images_labels[index]}")
+        write_to_file('iznik_labels.csv', f"{E[index]}, {images_labels[index]}")
         
-    sort_file('iznik_labels2.csv')
+    sort_file('iznik_labels.csv')
     
     result = images_labels
     
