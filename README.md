@@ -23,6 +23,14 @@ You'll find two files here :
 
 - To launch the dataset generator, just enter `python ./main.py` in the terminal, when you're in the `Iznik Dataset Generator`'folder.
 
+- To launch the GAN, ...
+
+---
+
+### Requirements
+
+All the requirements can be installed with the command `pip install -r requirements.txt` when you're in the main folder.
+
 ---
 
 ### How the code works
@@ -50,6 +58,5 @@ You'll find two files here :
 After a few steps, we will obtain only 'nice' images every iteration, until there is only 'false' images.
 
 Thanks to this process, it merely takes __20 mins__ to generate a __2000 items__ dataset.
-
 
 ---

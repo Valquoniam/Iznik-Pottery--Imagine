@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import sys
 from tqdm import tqdm
 
-# Pour éviter le message relou 'No module triton detected'
+# To skip the message 'No module triton detected' on Windows
 #######################
 @contextmanager
 def suppress_stdout_stderr():
