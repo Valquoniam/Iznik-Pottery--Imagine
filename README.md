@@ -21,7 +21,7 @@ You'll find two files here :
 
 - Link of the advancement log book : <https://shorturl.at/fqrFR>.
 
-- To launch the dataset generator, just enter `python ./main.py` in the terminal, when you're in the `Iznik Dataset Generator`'folder.
+- To launch the dataset generator, just enter `python3 ./main.py` in the terminal, when you're in the `Iznik Dataset Generator`'folder.
 
 - To launch the GAN, ...
 
@@ -29,7 +29,12 @@ You'll find two files here :
 
 ### Requirements
 
-All the requirements can be installed with the command `pip install -r requirements.txt` when you're in the main folder.
+All the requirements can be installed with the command 
+
+```bash
+pip install -r requirements.txt
+```  
+when you're in the main folder.
 
 ---
 
