@@ -11,7 +11,7 @@
 
 I aim to generate a dataset of usable Iznik pottery photos, and then train an adversarial network to create such Iznik tiles.
 
-You'll find two files here :
+You'll find two folders here :
 
 1. The file `Iznik Dataset Generator` which contains all the code to generate a dataset through active learning (assisted by an operator). All parameters can be changed and this method can adapt to any dataset you want to create.
 
