@@ -7,7 +7,7 @@ import imagehash
 
 class Downloader:
     def __init__(self):
-        self.search_query = ['Iznik_pottery_tiles', 'Iznik_Pottery', 'Tuiles_Iznik', 'Echantillon_de_tuile_diznik']
+        self.search_query = ['Iznik_pottery_tiles', 'Iznik_Pottery', 'Tuiles_Iznik', 'Echantillon_de_tuile_diznik', 'square_iznik_tiles', 'squared_iznik_mosaic']
         self.download_path = 'All_Downloaded_Images'
         self.number_of_items = 0
         self.flips = 0
@@ -20,6 +20,10 @@ class Downloader:
         if user_input.lower() == "y" or user_input.lower() == "yes":
             self.number_of_items = int(input("\nHow many images do you want to download ? \n"))  
             self.flips = 1
+            
+            if os.path.exists('iznik_labels.csv'):
+                os.remove('iznik_labels.csv')
+            
         elif user_input.lower() == "n" or user_input.lower() == "no":
             self.flips = 0
         else:
@@ -29,9 +33,9 @@ class Downloader:
         if self.number_of_items >0:
             for keyword in self.search_query:
                 downloader.download(keyword,output_dir='../Iznik Dataset Generator',  limit=self.number_of_items, adult_filter_off=True, force_replace=True, timeout=5, verbose=False)
-    
+            
     def merge_folders(self, source_folder2, destination_folder):
-        
+
         if not os.path.exists(destination_folder):
             os.makedirs(destination_folder)
             
@@ -56,9 +60,11 @@ class Downloader:
             shutil.copy(source_path, destination_path)
             
     def merge_everything(self):
-        for folder in self.search_query:
-            self.merge_folders(folder, self.download_path)
-            
+        if self.flips:
+            for folder in self.search_query:
+                self.merge_folders(folder, self.download_path)
+                shutil.rmtree(folder)
+                
     def treat_images(self):
         for filename in os.listdir(self.download_path):
             
@@ -91,8 +97,8 @@ class Downloader:
         canvas.paste(image, mask=image)
         return canvas.convert('RGB')
 
-    def with_ztransform_preprocess(self,hashfunc, hash_size=8):
-        def function(self,path):
+    def with_ztransform_preprocess(self,hashfunc, hash_size):
+        def function(path):
             image = self.alpharemover(Image.open(path))
             image = image.convert("L").resize((hash_size, hash_size), Image.ANTIALIAS)
             data = image.getdata()
@@ -107,14 +113,14 @@ class Downloader:
         hash_dict = {}
         for file in os.listdir(self.download_path):
             file_path = os.path.join(self.download_path, file)
-            hash = self.with_ztransform_preprocess(imagehash.dhash, hash_size = 8)(file_path)
+            hash = self.with_ztransform_preprocess(imagehash.dhash, hash_size = 3)(file_path)
             
             if hash in hash_dict:
                 os.remove(file_path)
                 print("Image en doublon supprimée:", file)
             else:
                 hash_dict[hash] = file
-                    
+                
     def download_dataset(self):
         
         self.ask_user()

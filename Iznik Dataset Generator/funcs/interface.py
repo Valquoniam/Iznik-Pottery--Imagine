@@ -113,7 +113,6 @@ def _rien_valider_click():
     for label in images_displayed:
         image_click(label)
 
-
 def valider_click():
     E = global_var_E
     global result 

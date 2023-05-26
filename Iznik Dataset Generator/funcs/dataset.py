@@ -8,6 +8,8 @@ from funcs.downloader import Downloader
 from contextlib import contextmanager
 import sys
 from tqdm import tqdm
+import csv
+import shutil
 
 # To skip the message 'No module triton detected' on Windows
 #######################
@@ -51,7 +53,7 @@ class IznikDataset(Dataset):
         
         with torch.no_grad( ):
             
-            self.images_list = [image for image in os.listdir('Iznik_pottery_tiles')]
+            self.images_list = [image for image in os.listdir(downloader.download_path)]
             self.images_opened = [Image.open(os.path.join(downloader.download_path,image)) for image in self.images_list]
             self.images_transformed = []
 
@@ -65,11 +67,13 @@ class IznikDataset(Dataset):
                 progress_bar.update(1)
                 
             progress_bar.close()
+            
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = torch.optim.SGD(self.linear.parameters(), lr=0.01)
             
         self.labels_studied = []
         self.images_studied = []
+        self.csv_name= 'iznik_labels.csv'
 
     def __len__(self):
         return len(self.images_studied)
@@ -122,4 +126,31 @@ class IznikDataset(Dataset):
                 self.optimizer.step()
                 
                 #print(f'Loss at epoch {epoch} : {loss.item():.4f}')
+                
+    def move_good_images(self):
+
+        dossier_images = downloader.download_path
+        # Chemin du dossier de destination pour les images avec le label '1'
+        dossier_destination = "Iznik_tiles/"
+        
+        if not os.path.exists(dossier_destination):
+            os.mkdir(dossier_destination)
+
+        # Ouvrir le fichier CSV
+        with open(self.csv_name, 'r') as f:
+            csv_reader = csv.reader(f)
+            
+            for ligne in csv_reader:
+                
+                nom_image, label = ligne
+                # Si le label est '1', déplacer l'image vers le dossier de destination
+                if label == ' 1':
+                    
+                    # Construire le chemin complet de l'image source
+                    chemin_image_source = os.path.join(dossier_images, nom_image)
+                    # Construire le chemin complet de l'image de destination
+                    chemin_image_destination = os.path.join(dossier_destination, nom_image)
+                    # Déplacer l'image vers le dossier de destination
+                    shutil.move(chemin_image_source, chemin_image_destination)
+                
                 

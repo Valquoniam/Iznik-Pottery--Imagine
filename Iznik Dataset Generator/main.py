@@ -1,9 +1,9 @@
 from funcs.downloader import Downloader
 from funcs.dataset import IznikDataset
 import funcs.interface as interface
-import funcs.move_dataset as md
 
 def main():
+    
     
     # Create downloader class
     downloader = Downloader()
@@ -13,7 +13,7 @@ def main():
     
     # Create the dataset, which is empty as first
     dataset = IznikDataset()
-
+    
     while len(dataset) != len(dataset.images_list):
         
         # Get the top 25 images
@@ -28,8 +28,9 @@ def main():
         
         if len(dataset) != len(dataset.images_list):
             dataset.learn()    
+
     
-    md.move_good_images()         
+    dataset.move_good_images()      
     print("*** DATASET COMPLETED ***")
     
 if __name__ == '__main__':
