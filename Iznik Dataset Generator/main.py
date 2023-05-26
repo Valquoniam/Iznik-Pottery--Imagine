@@ -32,7 +32,5 @@ def main():
     md.move_good_images()         
     print("*** DATASET COMPLETED ***")
     
-    
-    
 if __name__ == '__main__':
     main()

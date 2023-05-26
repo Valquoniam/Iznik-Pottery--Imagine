@@ -1,14 +1,14 @@
 from bing_image_downloader import downloader
 import os
 from PIL import Image
-import random
 import numpy as np
-
+import shutil
+import imagehash
 
 class Downloader:
     def __init__(self):
-        self.search_query = 'Iznik_pottery_tiles'
-        self.download_path = self.search_query
+        self.search_query = ['Iznik_pottery_tiles', 'Iznik_Pottery', 'Tuiles_Iznik', 'Echantillon_de_tuile_diznik']
+        self.download_path = 'All_Downloaded_Images'
         self.number_of_items = 0
         self.flips = 0
 
@@ -27,7 +27,37 @@ class Downloader:
     
     def download(self):
         if self.number_of_items >0:
-            downloader.download(self.search_query,output_dir='../Iznik Dataset Generator',  limit=self.number_of_items, adult_filter_off=True, force_replace=True, timeout=5, verbose=False)
+            for keyword in self.search_query:
+                downloader.download(keyword,output_dir='../Iznik Dataset Generator',  limit=self.number_of_items, adult_filter_off=True, force_replace=True, timeout=5, verbose=False)
+    
+    def merge_folders(self, source_folder2, destination_folder):
+        
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+            
+        for filename in os.listdir(source_folder2):
+            source_path = os.path.join(source_folder2, filename)
+            destination_path = os.path.join(destination_folder, filename)
+
+            if os.path.exists(destination_path):
+                base_name, extension = os.path.splitext(filename)
+                counter = 1
+                while True:
+                    
+                    new_filename = f"{base_name}({counter}){extension}"
+                    new_destination_path = os.path.join(destination_folder, new_filename)
+                    
+                    if not os.path.exists(new_destination_path):
+                        destination_path = new_destination_path
+                        break
+                    
+                    counter += 1
+
+            shutil.copy(source_path, destination_path)
+            
+    def merge_everything(self):
+        for folder in self.search_query:
+            self.merge_folders(folder, self.download_path)
             
     def treat_images(self):
         for filename in os.listdir(self.download_path):
@@ -54,35 +84,43 @@ class Downloader:
                     os.rename(os.path.join(self.download_path, file_name),new_path)
 
 
+    def alpharemover(self, image):
+        if image.mode != 'RGBA':
+            return image
+        canvas = Image.new('RGBA', image.size, (255,255,255,255))
+        canvas.paste(image, mask=image)
+        return canvas.convert('RGB')
+
+    def with_ztransform_preprocess(self,hashfunc, hash_size=8):
+        def function(self,path):
+            image = self.alpharemover(Image.open(path))
+            image = image.convert("L").resize((hash_size, hash_size), Image.ANTIALIAS)
+            data = image.getdata()
+            quantiles = np.arange(100)
+            quantiles_values = np.percentile(data, quantiles)
+            zdata = (np.interp(data, quantiles_values, quantiles) / 100 * 255).astype(np.uint8)
+            image.putdata(zdata)
+            return hashfunc(image)
+        return function
+        
     def delete_duplicatas(self):
-        hash_values = {}
-        for filename in os.listdir(self.download_path):
+        hash_dict = {}
+        for file in os.listdir(self.download_path):
+            file_path = os.path.join(self.download_path, file)
+            hash = self.with_ztransform_preprocess(imagehash.dhash, hash_size = 8)(file_path)
             
-            # Chemin complet de l'image
-            image_path = os.path.join(self.download_path, filename)
-            image = Image.open(image_path)
-            
-            # Redimensionner l'image en 16x16 pixels
-            image = image.resize((50, 50))
-            image_array = np.array(image)
-            flattened_array = image_array.flatten()
-            binary_array = np.packbits(flattened_array)
-            hash_value = binary_array.tobytes().hex()
-
-            # Vérifier si le hash value est déjà dans le dictionnaire
-            if hash_value in hash_values:
-                os.remove(image_path)
-                print("Image en doublon supprimée:", filename)
+            if hash in hash_dict:
+                os.remove(file_path)
+                print("Image en doublon supprimée:", file)
             else:
-                hash_values[hash_value] = filename
-
-                print("Image traitée:", filename)        
+                hash_dict[hash] = file
                     
     def download_dataset(self):
         
         self.ask_user()
         self.download()
+        self.merge_everything()
         self.treat_images()
-        self.delete_duplicatas()
+        self.sort_images()
         self.delete_duplicatas()
         self.sort_images()
