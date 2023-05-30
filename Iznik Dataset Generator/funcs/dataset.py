@@ -10,6 +10,7 @@ import sys
 from tqdm import tqdm
 import csv
 import shutil
+import random
 
 # To skip the message 'No module triton detected' on Windows
 #######################
@@ -30,11 +31,9 @@ with suppress_stdout_stderr():
 downloader = Downloader()
 device = "cuda:0"
 
-
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
-
 
 class IznikDataset(Dataset):
     
@@ -57,7 +56,7 @@ class IznikDataset(Dataset):
             self.images_opened = [Image.open(os.path.join(downloader.download_path,image)) for image in self.images_list]
             self.images_transformed = []
 
-            # Créer une barre de progression avec le nombre total d'itérations
+            # Progress bar 
             progress_bar = tqdm(total=len(self.images_opened), desc='Passing images through DINOv2...')  
             
             for image in self.images_opened:
@@ -74,15 +73,19 @@ class IznikDataset(Dataset):
         self.labels_studied = []
         self.images_studied = []
         self.csv_name= 'iznik_labels.csv'
+        self.where_images_will_end_up = 'Iznik_tiles'
 
+    # Defining the len 
     def __len__(self):
         return len(self.images_studied)
     
+    # An item = 25 images + labels (one batch)
     def __getitem__(self, idx):
         
         dictionary = {'images' : self.images_studied[idx : idx +25] , 'labels' : self.labels_studied[idx : idx + 25]}
         return dictionary
     
+    # Forward = 384
     def forward(self, x):
         out = self.linear(x)
         out = nn.Sigmoid()(out)
@@ -131,26 +134,52 @@ class IznikDataset(Dataset):
 
         dossier_images = downloader.download_path
         # Chemin du dossier de destination pour les images avec le label '1'
-        dossier_destination = "Iznik_tiles/"
+        dossier_destination = self.where_images_will_end_up
         
         if not os.path.exists(dossier_destination):
             os.mkdir(dossier_destination)
 
-        # Ouvrir le fichier CSV
-        with open(self.csv_name, 'r') as f:
-            csv_reader = csv.reader(f)
-            
-            for ligne in csv_reader:
+        if os.path.exists(self.csv_name):
+            # Ouvrir le fichier CSV
+            with open(self.csv_name, 'r') as f:
+                csv_reader = csv.reader(f)
                 
-                nom_image, label = ligne
-                # Si le label est '1', déplacer l'image vers le dossier de destination
-                if label == ' 1':
+                for ligne in csv_reader:
                     
-                    # Construire le chemin complet de l'image source
-                    chemin_image_source = os.path.join(dossier_images, nom_image)
-                    # Construire le chemin complet de l'image de destination
-                    chemin_image_destination = os.path.join(dossier_destination, nom_image)
-                    # Déplacer l'image vers le dossier de destination
-                    shutil.move(chemin_image_source, chemin_image_destination)
-                
-                
+                    nom_image, label = ligne
+                    # Si le label est '1', déplacer l'image vers le dossier de destination
+                    if label == ' 1':
+                        
+                        # Construire le chemin complet de l'image source
+                        chemin_image_source = os.path.join(dossier_images, nom_image)
+                        # Construire le chemin complet de l'image de destination
+                        chemin_image_destination = os.path.join(dossier_destination, nom_image)
+                        # Déplacer l'image vers le dossier de destination
+                        shutil.move(chemin_image_source, chemin_image_destination)
+            
+            # Clean everything
+            os.remove(self.csv_name)
+            
+        shutil.rmtree(downloader.download_path)
+        downloader.sort_images(self.where_images_will_end_up)
+        
+        fichiers_jpeg = os.listdir(self.where_images_will_end_up)
+        # Mélanger les noms de fichiers
+        random.shuffle(fichiers_jpeg)
+
+        # Parcourir les fichiers et les renommer
+        for i, fichier in enumerate(fichiers_jpeg):
+            ancien_chemin = os.path.join(self.where_images_will_end_up, fichier)
+            nouveau_nom = 'img_{:05d}LOL.jpeg'.format(i + 1)
+            nouveau_chemin = os.path.join(self.where_images_will_end_up, nouveau_nom)
+            os.rename(ancien_chemin, nouveau_chemin)
+
+        fichiers_jpeg = os.listdir(self.where_images_will_end_up)
+        random.shuffle(fichiers_jpeg)
+
+        for i, fichier in enumerate(fichiers_jpeg):
+            ancien_chemin = os.path.join(self.where_images_will_end_up, fichier)
+            nouveau_nom = 'img_{:05d}.jpeg'.format(i + 1)
+            nouveau_chemin = os.path.join(self.where_images_will_end_up, nouveau_nom)
+            os.rename(ancien_chemin, nouveau_chemin) 
+                        

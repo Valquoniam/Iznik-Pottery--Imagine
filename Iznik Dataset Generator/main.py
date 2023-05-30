@@ -4,7 +4,6 @@ import funcs.interface as interface
 
 def main():
     
-    
     # Create downloader class
     downloader = Downloader()
     
@@ -32,6 +31,9 @@ def main():
     
     dataset.move_good_images()      
     print("*** DATASET COMPLETED ***")
+    
+    # If you want to use the generator multiple times, you can use the latest w computed to speed up the process
+    #print(f'w = {dataset.linear.weight}')
     
 if __name__ == '__main__':
     main()
