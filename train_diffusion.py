@@ -14,18 +14,12 @@ from utils.util import z_center, reverse_z_center
 import numpy as np
 
 
-def extract(a, t, x_shape):
-    batch_size = t.shape[0]
-    out = a.gather(-1, t.cpu())
-    return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
-
-
 @torch.no_grad()
 def sample(ddpm, sample_size, channel, size):
     frames = []
     ddpm.eval()
 
-    timesteps = list(range(ddpm.num_timesteps))[::-1]
+    timesteps = list(range(ddpm.timesteps))[::-1]
     sample = torch.randn(sample_size, channel, size, size).to(device)
 
     for i, t in enumerate(tqdm(timesteps)):
@@ -47,7 +41,9 @@ def training_loop(model, dataloader, optimizer, num_epochs, num_timesteps, devic
         progress_bar = tqdm(total=len(dataloader))
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in enumerate(dataloader):
-            batch = batch[0].to(device)
+            if isinstance(batch, tuple):
+                batch = batch[0]
+            batch = batch.to(device)
             noise = torch.randn_like(batch).to(device)
             timesteps = torch.randint(0, num_timesteps, (batch.shape[0],)).long().to(device)
 
@@ -69,12 +65,13 @@ def training_loop(model, dataloader, optimizer, num_epochs, num_timesteps, devic
 
 
 device = 'cuda'
-data = 'mnist'
+data = 'tiles'
 size = 48
 c = 1 if data == 'mnist' else 3
-num_timesteps = 1000
+timesteps = 1000
 learning_rate = 1e-3
-num_epochs = 50
+num_epochs = 500
+make_gif = False
 
 transform = T.Compose([
     T.Resize(size),
@@ -92,29 +89,45 @@ reverse_transform = T.Compose([
 if data == 'mnist':
     root_dir = './data/mnist'
     dataset = torchvision.datasets.MNIST(root=root_dir, train=True, transform=transform, download=True)
-    network = tiny_unet.MyTinyUNet(in_channels=c, n_steps=num_timesteps, size=size)
+    network = tiny_unet.MyTinyUNet(in_channels=c, n_steps=timesteps, size=size)
 elif data == 'cifar10':
     root_dir = './data/cifar10'
     dataset = torchvision.datasets.CIFAR10(root=root_dir, train=True, transform=transform, download=True)
-    network = med_unet.UNet(in_channels=c, n_steps=num_timesteps, size=size)
+    network = med_unet.UNet(in_channels=c, n_steps=timesteps, size=size)
 elif data == 'tiles':
     root_dir = './data/Iznik_tiles'
     dataset = TilesDataset(root_dir, transform=transform)
-    network = orig_unet.UNet(size, channels=c, dim_mults=(1, 2, 4,))
+    network = med_unet.UNet(in_channels=c, n_steps=timesteps, size=size)
+    # network = orig_unet.UNet(size, channels=c, dim_mults=(1, 2, 4,))
 else:
     raise ValueError(f'Invalid data type: {data}')
 
-dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=4096, shuffle=True, num_workers=24)
+dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=4096, shuffle=True, num_workers=16)
 
 network = network.to(device)
-model = ddpm.DDPM(network, num_timesteps, beta_start=0.0001, beta_end=0.02, device=device)
+model = ddpm.DDPM(network, timesteps, beta_start=0.0001, beta_end=0.02, device=device)
 model.train()
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 
-losses = training_loop(model, dataloader, optimizer, num_epochs, num_timesteps, device=device)
+losses = training_loop(model, dataloader, optimizer, num_epochs, timesteps, device=device)
 plt.plot(losses)
 generated = sample(model, 100, channel=c, size=size)
 show_images(generated, 'Final result', scale=True)
+
+if make_gif:
+    import matplotlib.animation as animation
+
+    rand_idx = 7
+
+    fig = plt.figure()
+    ims = []
+    for i in range(timesteps):
+        im = plt.imshow(samples[i][rand_idx].reshape(size, size, c), animated=True)
+        ims.append([im])
+
+    animate = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
+    animate.save('diffusion.gif')
+    plt.show()
 
 if data == 'cifar10':
     def make_dataloader(dataset, class_name):
@@ -129,14 +142,14 @@ if data == 'cifar10':
 
 
     class_name = 'horse'
-    ship_dataloader = make_dataloader(dataset, class_name)
-    ship_network = copy.deepcopy(network)
-    tuned_model = ddpm.DDPM(ship_network, num_timesteps, beta_start=0.0001, beta_end=0.02, device=device)
+    class_loader = make_dataloader(dataset, class_name)
+    tuned_network = copy.deepcopy(network)
+    tuned_model = ddpm.DDPM(tuned_network, timesteps, beta_start=0.0001, beta_end=0.02, device=device)
     num_epochs = 100
-    num_timesteps = model.num_timesteps
+    timesteps = model.timesteps
     learning_rate = 1e-3
     tuned_model.train()
     optimizer = torch.optim.Adam(tuned_model.parameters(), lr=learning_rate)
-    training_loop(tuned_model, ship_dataloader, optimizer, num_epochs, num_timesteps, device=device)
-    generated, generated_mid = sample(tuned_model, 100, 3, 32)
+    training_loop(tuned_model, class_loader, optimizer, num_epochs, timesteps, device=device)
+    generated = sample(tuned_model, 100, c, size)
     show_images(generated, f'Generated {class_name}', True)

@@ -3,10 +3,10 @@ import torch
 from utils.schedulers import *
 
 class DDPM(nn.Module):
-    def __init__(self, network, num_timesteps, beta_start=0.0001, beta_end=0.02, device='cuda:0') -> None:
+    def __init__(self, network, timesteps, beta_start=0.0001, beta_end=0.02, device='cuda:0') -> None:
         super(DDPM, self).__init__()
-        self.num_timesteps = num_timesteps
-        self.betas = linear_beta_schedule(num_timesteps, beta_start, beta_end).to(device)
+        self.timesteps = timesteps
+        self.betas = linear_beta_schedule(timesteps, beta_start, beta_end).to(device)
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, axis=0)
         self.network = network

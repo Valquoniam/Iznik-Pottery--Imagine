@@ -23,9 +23,10 @@ def show_images(images, title="", scale=False):
                 plt.imshow(images[idx])
                 plt.axis('off')
                 idx += 1
-    fig.suptitle(title, fontsize=30)
+    fig.suptitle(title, fontsize=24)
 
     # Showing the figure
+    plt.layout_adjust(hspace=0.1, wspace=0.1)
     plt.tight_layout()
     plt.show()
 
