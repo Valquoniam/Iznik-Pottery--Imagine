@@ -1,11 +1,12 @@
 import torch.nn as nn
 import torch
+from utils.schedulers import *
 
 class DDPM(nn.Module):
     def __init__(self, network, num_timesteps, beta_start=0.0001, beta_end=0.02, device='cuda:0') -> None:
         super(DDPM, self).__init__()
         self.num_timesteps = num_timesteps
-        self.betas = torch.linspace(beta_start, beta_end, num_timesteps, dtype=torch.float32).to(device)
+        self.betas = linear_beta_schedule(num_timesteps, beta_start, beta_end).to(device)
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, axis=0)
         self.network = network

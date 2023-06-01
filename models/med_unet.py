@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from utils.util import sinusoidal_embedding
+from models.modules import sinusoidal_embedding
 import torch.nn.functional as F
 
 class double_conv(nn.Module):
