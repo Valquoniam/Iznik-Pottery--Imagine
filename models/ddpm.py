@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 from utils.schedulers import *
+from tqdm import tqdm
 
 class DDPM(nn.Module):
     def __init__(self, network, timesteps, beta_start=0.0001, beta_end=0.02, device='cuda:0') -> None:
@@ -27,6 +28,23 @@ class DDPM(nn.Module):
     def reverse(self, x, t):
         # The network return the estimation of the noise we added
         return self.network(x, t)
+
+    @torch.no_grad()
+    def sample(self, n, size, c=3):
+        frames = []
+        self.eval()
+
+        timesteps = list(range(self.timesteps))[::-1]
+        sample = torch.randn(n, c, size, size).to(self.device)
+
+        for i, t in enumerate(tqdm(timesteps)):
+            time_tensor = (torch.ones(n, 1) * t).long().to(self.device)
+            residual = self.reverse(sample, time_tensor)
+            sample = self.step(residual, time_tensor[0], sample)
+
+        for i in range(n):
+            frames.append(sample[i].detach().cpu())
+        return frames
 
     def step(self, model_output, timestep, sample):
         # one step of sampling
