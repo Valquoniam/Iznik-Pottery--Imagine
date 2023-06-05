@@ -51,34 +51,34 @@ class GenModel(pl.LightningModule):
         return noise_pred
 
     def training_step(self, batch, batch_idx):
-        if isinstance(batch, tuple):
+        if isinstance(batch, list):
             batch = batch[0]
         noise = torch.randn_like(batch).to(batch.device)
         noise_pred = self(batch, noise)
         loss = F.mse_loss(noise_pred, noise)
         self.log('loss/train', loss)
 
-        self.eval()
-        generated = self.ddpm.sample(64, self.size, c=self.in_c)
-
-        steps_to_sample = [self.n_steps // 6 * i for i in range(1, 7)]
-        batch_to_show = batch[0:4]
-        forward_imgs = [self.ddpm.add_noise(batch_to_show,
-                                             torch.randn_like(batch_to_show).to(batch.device),
-                                             torch.tensor([t])) for t in steps_to_sample]
-
-        backward_noise = [self.ddpm.reverse(forward_imgs[-1], torch.tensor([t for _ in range(4)]).to(forward_imgs[0].device)) for t in steps_to_sample]
-
-        backward_imgs = [self.ddpm.step(backward_noise[i], steps_to_sample[i], forward_imgs[-1]) for i in range(len(steps_to_sample))]
+        # steps_to_sample = [self.n_steps // 6 * i for i in range(1, 7)]
+        # batch_to_show = batch[0:4]
+        # forward_imgs = [self.ddpm.add_noise(batch_to_show,
+        #                                      torch.randn_like(batch_to_show).to(batch.device),
+        #                                      torch.tensor([t])) for t in steps_to_sample]
+        #
+        # backward_noise = [self.ddpm.reverse(forward_imgs[-1], torch.tensor([t for _ in range(4)]).to(forward_imgs[0].device)) for t in steps_to_sample]
+        #
+        # backward_imgs = [self.ddpm.step(backward_noise[i], steps_to_sample[i], forward_imgs[-1]) for i in range(len(steps_to_sample))]
 
 
-        noisy_to_show = (forward_imgs + backward_imgs)
-        noisy_to_show = torch.stack(noisy_to_show).permute(1, 0, 2, 3, 4).detach().cpu()
-        process_img = show_noise_steps(noisy_to_show, batch_to_show.detach().cpu(), row_title=None, scale=True, show=False)
+        # noisy_to_show = (forward_imgs + backward_imgs)
+        # noisy_to_show = torch.stack(noisy_to_show).permute(1, 0, 2, 3, 4).detach().cpu()
+        # process_img = show_noise_steps(noisy_to_show, batch_to_show.detach().cpu(), row_title=None, scale=True, show=False)
 
-        grid_img = show_images(generated, rows=8, cols=8, scale=True, show=False)
-        self.logger.experiment.add_figure('pred_grid', grid_img[0], global_step=self.global_step)
-        self.logger.experiment.add_figure('pred_diffusion', process_img[0], global_step=self.global_step)
+        if self.global_step % 200 == 0:
+            self.eval()
+            generated = self.ddpm.sample(64, self.size, c=self.in_c)
+            grid_img = show_images(generated, rows=8, cols=8, scale=True, show=False)
+            self.logger.experiment.add_figure('pred_grid', grid_img[0], global_step=self.global_step)
+            # self.logger.experiment.add_figure('pred_diffusion', process_img[0], global_step=self.global_step)
         return loss
 
     def configure_optimizers(self):
@@ -91,12 +91,12 @@ if __name__ == '__main__':
     device = 'cuda'
 
     data = 'tiles'
-    size = 48
+    size = 64
     timesteps = 1000
     learning_rate = 1e-3
-    epochs = 1000
+    epochs = 10000
     log_to_file = False
-    batch_size = 4096
+    batch_size = 256
 
     c = 1 if data == 'mnist' else 3
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     elif data == 'tiles':
         root_dir = './data/Iznik_tiles'
         dataset = TilesDataset(root_dir, transform=transform)
-        network = 'med_unet'
+        network = 'orig_unet'
     else:
         raise ValueError(f'Invalid data type: {data}')
 
@@ -137,11 +137,11 @@ if __name__ == '__main__':
                      device=device)
 
     exp_dir = f'{data}_{network}_size_{size}_steps_{timesteps}_lr_{learning_rate}'
-    logger = TensorBoardLogger(save_dir=exp_dir, default_hp_metric=False)
+    logger = TensorBoardLogger(save_dir=os.path.join('./logs/', exp_dir), default_hp_metric=False)
 
     trainer = Trainer(devices=1,
                       accelerator='gpu',
-                      log_every_n_steps=1,
+                      log_every_n_steps=10,
                       logger=logger,
                       max_epochs=epochs,
                       default_root_dir=os.path.join('./logs/', exp_dir),

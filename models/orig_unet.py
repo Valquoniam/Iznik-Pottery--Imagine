@@ -85,7 +85,7 @@ class UNet(nn.Module):
         self.final_res_block = block_klass(dim * 2, dim, time_emb_dim=time_dim)
         self.final_conv = nn.Conv2d(dim, self.out_dim, 1)
 
-    def forward(self, x, time, x_self_cond=None):
+    def extract_features(self, x, time, x_self_cond=None):
         if self.self_condition:
             x_self_cond = default(x_self_cond, lambda: torch.zeros_like(x))
             x = torch.cat((x_self_cond, x), dim=1)
@@ -93,7 +93,7 @@ class UNet(nn.Module):
         x = self.init_conv(x)
         r = x.clone()
 
-        t = self.time_mlp(time.squeeze())
+        t = self.time_mlp(time[:, 0])
 
         h = []
 
@@ -110,6 +110,11 @@ class UNet(nn.Module):
         x = self.mid_block1(x, t)
         x = self.mid_attn(x)
         x = self.mid_block2(x, t)
+        return x, t, r, h
+
+
+    def forward(self, x, time, x_self_cond=None):
+        x, t, r, h = self.extract_features(x, time, x_self_cond)
 
         for block1, block2, attn, upsample in self.ups:
             x = torch.cat((x, h.pop()), dim=1)

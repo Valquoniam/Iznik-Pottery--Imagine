@@ -8,6 +8,10 @@ def z_center(x):
 def reverse_z_center(x):
     return (x + 1) / 2
 
+def scale(x):
+    x_min = x - x.min()
+    return x_min / x_min.max()
+
 def seed_worker(worker_id):
     clear_logging()
     worker_seed = torch.initial_seed() % 2 ** 32

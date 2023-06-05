@@ -46,6 +46,23 @@ class DDPM(nn.Module):
             frames.append(sample[i].detach().cpu())
         return frames
 
+    @torch.no_grad()
+    def sample_with_timelapse(self, timestep_interval, n, size, c=3):
+        self.eval()
+
+        frames = []
+        timesteps = list(range(self.timesteps))[::-1]
+        sample = torch.randn(n, c, size, size).to(self.device)
+
+        for i, t in enumerate(tqdm(timesteps)):
+            time_tensor = (torch.ones(n, 1) * t).long().to(self.device)
+            residual = self.reverse(sample, time_tensor)
+            sample = self.step(residual, time_tensor[0], sample)
+            if t % timestep_interval == 0 or t == self.timesteps - 1:
+                frames.append(sample.detach().cpu())
+        return frames
+
+
     def step(self, model_output, timestep, sample):
         # one step of sampling
         # timestep (1)
