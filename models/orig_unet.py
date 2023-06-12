@@ -93,7 +93,7 @@ class UNet(nn.Module):
         x = self.init_conv(x)
         r = x.clone()
 
-        t = self.time_mlp(time[:, 0])
+        t = self.time_mlp(time)
 
         h = []
 

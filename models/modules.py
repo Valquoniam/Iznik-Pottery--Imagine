@@ -139,7 +139,7 @@ class ResnetBlock(nn.Module):
     def forward(self, x, time_emb=None):
         scale_shift = None
         if exists(self.mlp) and exists(time_emb):
-            time_emb = self.mlp(time_emb)
+            time_emb = self.mlp(time_emb).squeeze()
             time_emb = rearrange(time_emb, "b c -> b c 1 1")
             scale_shift = time_emb.chunk(2, dim=1)
 

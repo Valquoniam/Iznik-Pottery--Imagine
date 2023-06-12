@@ -9,7 +9,10 @@ class DDPM(nn.Module):
         self.timesteps = timesteps
         self.betas = linear_beta_schedule(timesteps, beta_start, beta_end).to(device)
         self.alphas = 1.0 - self.betas
-        self.alphas_cumprod = torch.cumprod(self.alphas, axis=0)
+        if device == 'mps':
+            self.alphas = self.alphas.cpu()
+        self.alphas_cumprod = torch.cumprod(self.alphas, axis=0).to(device)
+        self.alphas = self.alphas.to(device)
         self.network = network
         self.device = device
         self.sqrt_alphas_cumprod = self.alphas_cumprod ** 0.5  # used in add_noise
