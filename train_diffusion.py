@@ -21,6 +21,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from utils.data_aug import *
 
+
 class GenModel(pl.LightningModule):
     def __init__(self, data, model_type, size, in_c, n_steps, lr, device='cuda:0'):
         super().__init__()
@@ -68,8 +69,6 @@ class GenModel(pl.LightningModule):
             self.logger.experiment.add_figure('pred_grid', grid_img[0], global_step=self.global_step)
         return loss
 
-
-
     def configure_optimizers(self):
         opt = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         return [opt]
@@ -77,7 +76,8 @@ class GenModel(pl.LightningModule):
 
 if __name__ == '__main__':
     seed = 4321
-    device = 'cuda'
+    seed_everything(seed)
+    device = 'cpu'
 
     data = 'tiles'
     size = 64
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     learning_rate = 1e-3
     epochs = 10000
     log_to_file = False
-    batch_size = 8
+    batch_size = 1
     augment_modes = ['flip', 'rotate', 'symmetry']
 
     c = 1 if data == 'mnist' else 3
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     logger = TensorBoardLogger(save_dir=os.path.join('./logs/', exp_dir), default_hp_metric=False)
 
     trainer = Trainer(devices=1,
-                      accelerator='mps' if device == 'mps' else 'cuda',
+                      accelerator='gpu' if device == 'cuda' else device,
                       log_every_n_steps=10,
                       logger=logger,
                       max_epochs=epochs,
