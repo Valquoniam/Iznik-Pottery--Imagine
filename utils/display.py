@@ -73,3 +73,9 @@ def remove_axes(axes):
     else:
         for ax in axes:
             _remove_axes(ax)
+
+def remove_spines(ax):
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
