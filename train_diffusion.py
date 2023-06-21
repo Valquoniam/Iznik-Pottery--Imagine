@@ -55,14 +55,15 @@ class GenModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         if isinstance(batch, list):
             batch = batch[0]
-        b1, b2, c, h, w = batch.shape
-        batch = batch.reshape(-1, c, h, w)
+        if len(batch.shape) == 5:
+            b1, b2, c, h, w = batch.shape
+            batch = batch.reshape(-1, c, h, w)
         noise = torch.randn_like(batch).to(batch.device)
         noise_pred = self(batch, noise)
         loss = F.mse_loss(noise_pred, noise)
         self.log('loss/train', loss)
 
-        if self.global_step % 100 == 0 and self.global_step > 0:
+        if self.global_step % 1000 == 0 and self.global_step > 0:
             self.eval()
             generated = self.ddpm.sample(64, self.size, c=self.in_c)
             grid_img = show_images(generated, rows=8, cols=8, scale=True, show=False)
@@ -77,7 +78,7 @@ class GenModel(pl.LightningModule):
 if __name__ == '__main__':
     seed = 4321
     seed_everything(seed)
-    device = 'cpu'
+    device = 'cuda'
 
     data = 'tiles'
     size = 64
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     model = GenModel(data=data, model_type=network, size=size, in_c=c, n_steps=timesteps, lr=learning_rate,
                      device=device)
 
-    exp_dir = f'{data}_{network}_size_{size}_steps_{timesteps}_lr_{learning_rate}_aug_{",".join(augment_modes)}'
+    exp_dir = f'temp_{data}_{network}_size_{size}_steps_{timesteps}_lr_{learning_rate}_aug_{",".join(augment_modes)}'
     logger = TensorBoardLogger(save_dir=os.path.join('./logs/', exp_dir), default_hp_metric=False)
 
     trainer = Trainer(devices=1,

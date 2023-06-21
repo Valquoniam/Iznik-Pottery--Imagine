@@ -32,6 +32,9 @@ class DDPM(nn.Module):
         # The network return the estimation of the noise we added
         return self.network(x, t)
 
+    def upsample(self, features, t, r, h):
+        return self.network.upsample(features, t, r, h)
+
     @torch.no_grad()
     def sample(self, n, size, c=3):
         frames = []
@@ -67,8 +70,6 @@ class DDPM(nn.Module):
 
 
     def step(self, model_output, timestep, sample):
-        # one step of sampling
-        # timestep (1)
         t = timestep
         coef_epsilon = (1 - self.alphas) / self.sqrt_one_minus_alphas_cumprod
         coef_eps_t = coef_epsilon[t].reshape(-1, 1, 1, 1)

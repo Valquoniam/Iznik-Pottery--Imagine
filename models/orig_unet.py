@@ -112,10 +112,7 @@ class UNet(nn.Module):
         x = self.mid_block2(x, t)
         return x, t, r, h
 
-
-    def forward(self, x, time, x_self_cond=None):
-        x, t, r, h = self.extract_features(x, time, x_self_cond)
-
+    def upsample(self, x, t, r, h):
         for block1, block2, attn, upsample in self.ups:
             x = torch.cat((x, h.pop()), dim=1)
             x = block1(x, t)
@@ -130,3 +127,7 @@ class UNet(nn.Module):
 
         x = self.final_res_block(x, t)
         return self.final_conv(x)
+
+    def forward(self, x, time, x_self_cond=None):
+        x, t, r, h = self.extract_features(x, time, x_self_cond)
+        return self.upsample(x, t, r, h)
