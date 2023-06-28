@@ -1,7 +1,8 @@
 from models.modules import *
 import torch.nn as nn
 import torch
-from models_asyrp.ddpm import diffusion
+from models_asyrp import diffusion
+
 
 class UNet(nn.Module):
     def __init__(
@@ -164,7 +165,7 @@ class UNet(nn.Module):
 
         for i in range(nums):
             setattr(self, f"layer_{i}", diffusion.DeltaBlock(in_channels=block_in,
-                                       out_channels=block_in,
-                                       temb_channels=self.dim * 4,
-                                       dropout=0.0)
-            )
+                                                             out_channels=block_in,
+                                                             temb_channels=self.dim * 4,
+                                                             dropout=0.0)
+                    )
