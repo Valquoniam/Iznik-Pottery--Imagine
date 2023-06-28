@@ -1,6 +1,7 @@
 from models.modules import *
 import torch.nn as nn
 import torch
+from models_asyrp.ddpm import diffusion
 
 class UNet(nn.Module):
     def __init__(
@@ -22,6 +23,9 @@ class UNet(nn.Module):
 
         init_dim = default(init_dim, dim)
         self.init_conv = nn.Conv2d(input_channels, init_dim, 1, padding=0) # changed to 1 and 0 from 7,3
+
+        self.dim = dim
+        self.dim_mults = dim_mults
 
         dims = [init_dim, *map(lambda m: dim * m, dim_mults)]
         in_out = list(zip(dims[:-1], dims[1:]))
@@ -128,6 +132,39 @@ class UNet(nn.Module):
         x = self.final_res_block(x, t)
         return self.final_conv(x)
 
-    def forward(self, x, time, x_self_cond=None):
+    def modified_upsample(self, x, temb, r, h, t, index, hs_coeff, t_edit, ignore_timestep):
+        if index is None:
+            return None, None
+        if t[0] < t_edit:
+            return x, None
+
+        # use DeltaBlock
+        h2 = x * hs_coeff[0]
+        for i in range(index+1):
+            delta_h = getattr(self, f"layer_{i}")(x, None if ignore_timestep else temb)
+            h2 += delta_h * hs_coeff[i+1]
+        return h2, delta_h
+
+    def forward(self, x, time, index, hs_coeff, t_edit, ignore_timestep, x_self_cond=None):
         x, t, r, h = self.extract_features(x, time, x_self_cond)
-        return self.upsample(x, t, r, h)
+        modified_upsampled = None
+        delta_h = None
+        if index is not None:
+            modified_x, delta_h = self.modified_upsample(x, t, r, h, time, index, hs_coeff, t_edit, ignore_timestep)
+            modified_upsampled = self.upsample(modified_x, t, r, [el for el in h])
+
+        upsampled = self.upsample(x, t, r, [el for el in h])
+
+        return upsampled, modified_upsampled, delta_h, x
+
+    def setattr_layers(self, nums):
+        block_in = None
+        for i_level in range(len(self.dim_mults)):
+            block_in = self.dim * self.dim_mults[i_level]
+
+        for i in range(nums):
+            setattr(self, f"layer_{i}", diffusion.DeltaBlock(in_channels=block_in,
+                                       out_channels=block_in,
+                                       temb_channels=self.dim * 4,
+                                       dropout=0.0)
+            )

@@ -52,14 +52,15 @@ def get_quadrant(point, scatterplot):
 def generate(n_show_total, timesteps, samples_to_show_cat):
     for i, t_i in enumerate(tqdm(timesteps)):
         time_tensor = (torch.ones(n_show_total, 1) * t_i).long().to(device)
-        residual = model.ddpm.reverse(samples_to_show_cat, time_tensor)
+        residual = model.ddpm.reverse(samples_to_show_cat, time_tensor, index=None, hs_coeff=None, t_edit=None, ignore_timestep=None)
         samples_to_show_cat = model.ddpm.step(residual, time_tensor[0], samples_to_show_cat)
     return samples_to_show_cat
 
-def generate_from_features(features, t, r, h):
+def generate_from_features(features, t, r, h, samples):
+    n_show_total = 1
     for i, t_i in enumerate(tqdm(timesteps)):
         time_tensor = (torch.ones(n_show_total, 1) * t_i).long().to(device)
-        residual = model.ddpm.upsample(features, t, r, h)
+        residual = model.ddpm.upsample(features, t, r, [el for el in h])
         samples = model.ddpm.step(residual, time_tensor[0], samples)
     return samples
 
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     seed = 4321
     seed_everything(seed)
     device = 'cuda'
-    dimred_device = 'gpu'
+    dimred_device = 'cpu'
 
     if dimred_device == 'cpu':
         from sklearn.manifold import TSNE
@@ -106,14 +107,14 @@ if __name__ == '__main__':
     model.eval()
 
     # ------------ Hyperparameters to change
-    n = 50000
+    n = 5000
     clusters = 10
     timesteps_to_cluster = [0]  # , 200, 400, 600, 800, 999]
 
     dimred_mode = 'pca' # 'tsne' or 'pca' or 'orth_dimred'
     dimred_space = 'features'  # 'features' or 'imgs'
 
-    cluster_mode = 'points_imgpairs' # 'points_imgrows' or 'points_imgpairs' or 'steer' or 'imgs'
+    cluster_mode = 'steer' # 'points_imgrows' or 'points_imgpairs' or 'steer' or 'imgs'
     n_show = 10
     n_imgs_show = 100
     cluster_dim = 'full'  # 'dimred' or 'full'
@@ -133,12 +134,23 @@ if __name__ == '__main__':
             features = []
             samples = []
 
+            start_idx = torch.randint(n, size=())
+
+            samples_used_start = 0
             for i in tqdm(range(epochs)):
                 batch_sample = torch.randn(batch_size, c, size, size).to(device)
                 batch_time_tensor = (torch.ones(1, batch_size).to(device) * t).long().squeeze()
                 batch_features, t_emb, r, h = model.ddpm.network.extract_features(batch_sample, batch_time_tensor)
-                features.append(batch_features.mean((-1, -2)))
+                features.append(batch_features)  # .mean((-1, -2)))
                 samples.append(batch_sample)
+                if samples_used_start <= start_idx < samples_used_start + batch_size:
+                    idx_to_use = start_idx - samples_used_start
+                    saved_t_emb = t_emb[idx_to_use, ...].unsqueeze(0)
+                    saved_r = r[idx_to_use, ...].unsqueeze(0)
+                    saved_h = [h_el[idx_to_use, ...].unsqueeze(0) for h_el in h]
+                    saved_sample = batch_sample[idx_to_use, ...].unsqueeze(0)
+                    saved_features = batch_features[idx_to_use, ...].unsqueeze(0)
+                samples_used_start += batch_size
 
             features = torch.cat(features, dim=0)
             samples = torch.cat(samples, dim=0)
@@ -159,7 +171,7 @@ if __name__ == '__main__':
                 data = features
                 if dimred_device == 'cpu':
                     data = data.cpu()
-                data_dimred = torch.tensor(dimred.fit_transform(data))
+                data_dimred = torch.tensor(dimred.fit_transform(data.mean((-1, -2))))
             data_dimred = data_dimred.cpu()
 
             if cluster_dim == 'full':
@@ -201,7 +213,6 @@ if __name__ == '__main__':
                 plt.tight_layout()
                 plt.subplots_adjust(left=0, bottom=0.03, right=1, top=0.95, wspace=-0.65, hspace=0.3)
                 plt.show()
-
             elif cluster_mode == 'points_imgpairs':
                 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
@@ -406,16 +417,14 @@ if __name__ == '__main__':
                     remove_axes(sc)
                 plt.tight_layout()
                 plt.show()
-
-
             elif cluster_mode == 'steer':
                 assert dimred_mode == 'pca', 'Steering only works with PCA'
-                direction = dimred.components_[0]
+                direction = torch.tensor(dimred.components_[0]).to(device)
                 direction /= torch.norm(direction)
 
-                start_idx = torch.randint(len(features), size=())
-                start_feature = features[start_idx].unsqueeze(0)
-                start_t = (torch.ones(1, 1).to(device) * t).long().squeeze()
-                start_r = samples[start_idx].unsqueeze(0)
+                # start_feature = features[start_idx].unsqueeze(0)
+                # start_t = (torch.ones(1, 1).to(device) * t).long().squeeze()
+                # start_r = samples[start_idx].unsqueeze(0)
 
-                neighbor_frames = generate_from_features(start_feature, t, r, h)
+                neighbor_frames = generate_from_features(saved_features, saved_t_emb, saved_r, saved_h, saved_sample)
+                print('hi')

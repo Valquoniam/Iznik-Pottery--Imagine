@@ -139,7 +139,9 @@ class ResnetBlock(nn.Module):
     def forward(self, x, time_emb=None):
         scale_shift = None
         if exists(self.mlp) and exists(time_emb):
-            time_emb = self.mlp(time_emb).squeeze()
+            time_emb = self.mlp(time_emb)
+            if len(time_emb.shape) > 2:
+                time_emb = time_emb[:, 0, :]
             time_emb = rearrange(time_emb, "b c -> b c 1 1")
             scale_shift = time_emb.chunk(2, dim=1)
 
@@ -210,3 +212,44 @@ class PreNorm(nn.Module):
     def forward(self, x):
         x = self.norm(x)
         return self.fn(x)
+
+
+def swish(x):
+    return x * x.sigmoid()
+
+class DeltaBlock(nn.Module):
+    def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False,
+                 dropout, temb_channels=512):
+        super().__init__()
+        self.in_channels = in_channels
+        out_channels = in_channels if out_channels is None else out_channels
+        self.out_channels = out_channels
+        self.use_conv_shortcut = conv_shortcut
+        self.conv1 = torch.nn.Conv2d(in_channels,
+                                     out_channels,
+                                     kernel_size=1,
+                                     stride=1,
+                                     padding=0)
+        self.temb_proj = torch.nn.Linear(temb_channels,
+                                         out_channels)
+        self.norm2 = torch.nn.GroupNorm(num_groups=32, num_channels=out_channels, eps=1e-6, affine=True)
+        self.conv2 = torch.nn.Conv2d(out_channels,
+                                     out_channels,
+                                     kernel_size=1,
+                                     stride=1,
+                                     padding=0)
+
+
+    def forward(self, x, temb=None):
+        h = x
+
+        h = self.conv1(h)
+
+        if temb is not None:
+            h = h + self.temb_proj(swish(temb))[:, :, None, None]
+
+        h = self.norm2(h)
+        h = swish(h)
+        h = self.conv2(h)
+
+        return h

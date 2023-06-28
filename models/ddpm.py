@@ -28,9 +28,8 @@ class DDPM(nn.Module):
         s2 = s2.reshape(-1, 1, 1, 1)  # (bs, 1, 1, 1)
         return s1 * x_start + s2 * x_noise
 
-    def reverse(self, x, t):
-        # The network return the estimation of the noise we added
-        return self.network(x, t)
+    def reverse(self, x, t, index, hs_coeff, t_edit, ignore_timestep):
+        return self.network(x, t, index, hs_coeff, t_edit, ignore_timestep)
 
     def upsample(self, features, t, r, h):
         return self.network.upsample(features, t, r, h)
@@ -70,7 +69,7 @@ class DDPM(nn.Module):
 
 
     def step(self, model_output, timestep, sample):
-        t = timestep
+        t = timestep.long()
         coef_epsilon = (1 - self.alphas) / self.sqrt_one_minus_alphas_cumprod
         coef_eps_t = coef_epsilon[t].reshape(-1, 1, 1, 1)
         coef_first = 1 / self.alphas ** 0.5
@@ -85,3 +84,13 @@ class DDPM(nn.Module):
         pred_prev_sample = pred_prev_sample + variance
 
         return pred_prev_sample
+
+    def setattr_layers(self, nums):
+        self.network.setattr_layers(nums)
+
+    def forward(self, x, t, index=None, t_edit=400, hs_coeff=(1.0, 1.0), delta_h=None, ignore_timestep=False,
+                use_mask=False):
+        # forward function for Asyrp
+        residual, residual_modified, delta_h, middle_h = self.reverse(x, t, index=index, hs_coeff=hs_coeff, t_edit=t_edit, ignore_timestep=ignore_timestep)
+        # x = self.step(residual, t[0], x)
+        return residual, residual_modified, delta_h, middle_h
