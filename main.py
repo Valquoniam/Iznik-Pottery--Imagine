@@ -23,6 +23,7 @@ def run_process(args):
 def main():
 
     if not os.path.exists("training_results/iznik_snapshot.pkl"):
+        subprocess.run(["pip", "install", "gdown"])
         subprocess.run(["gdown", "1JaogrbRCWgNDy4MBbZu-SD1j_3ZTe6uY", "-O", "training_results/iznik_snapshot.pkl"])
 
     if not os.path.exists("results"):
@@ -92,5 +93,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.stderr = subprocess.DEVNULL
     main()
