@@ -1,3 +1,4 @@
 *.pkl
 datasets
 results/
+static/

@@ -7,7 +7,6 @@ from torchvision import transforms
 from torchvision.transforms import Normalize
 import numpy as np
 import main_tools.loader as loader
-import lpips
 import imageio
 from tqdm import tqdm
 from training import misc
@@ -17,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
 # Utils
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0 #type: ignore
 model = "../training_results/iznik_snapshot.pkl"
 target_image = "../results/images/img_0027.png"
 
@@ -42,10 +41,10 @@ print("Loading network...")
 G = loader.load_network(model, eval=True)["Gs"].to(device)  # type: ignore
 
 # Load pre-trained DINO v2 model
-dino = torch.hub.load('facebookresearch/dino:main', 'dino_vits16').to(device)
+dino = torch.hub.load('facebookresearch/dino:main', 'dino_vits16').to(device)  # type: ignore
 
 # Load LPIPS model
-lpips_model = lpips.LPIPS(net='alex', verbose=False).to(device)
+#lpips_model = lpips.LPIPS(net='alex', verbose=False).to(device)
 
 # Get parameters from DINO layer norm
 dino_mean = dino.norm.weight.data.mean()
@@ -75,8 +74,8 @@ noise_std = 0.01
 
 # Optimize to match target image features
 target_feats = inv_model(target_img).to(device)
-optimizer = torch.optim.Adam([latent], lr=0.01)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=100, factor=0.1, verbose=True)
+optimizer = torch.optim.Adam([latent], lr=0.01) # type: ignore
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=100, factor=0.1, verbose=True) # type: ignore
 
 generated_images = []
 best_loss = float('inf')
