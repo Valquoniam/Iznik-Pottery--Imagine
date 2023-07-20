@@ -9,6 +9,7 @@ import webbrowser
 import subprocess
 import shutil
 import util.results
+import platform
 
 app = Flask(__name__)
 
@@ -25,6 +26,10 @@ image_source_file = args.file
 results = Results(image_source_file)
 @app.route('/index.html')
 def index():
+    return render_template('index.html')
+
+@app.route('/')
+def index2():
     return render_template('index.html')
 
 
@@ -92,8 +97,18 @@ def delete_images():
 atexit.register(delete_images)
 
 if __name__ == '__main__':
-    url = 'http://127.0.0.1:5000/index.html'
+    print(platform.uname().release.lower())
+    if platform.system() == 'Windows':
+        # Classic Windows
+        url = 'http://127.0.0.1:5000/'
+        
+    elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower() and "microsoft" in platform.uname().version.lower()):
+        # WSL2
+        url = 'http://172.27.201.41:5000/'
+    else:
+        # Classic Linux
+        url = 'http://127.0.0.1:5000/'
     webbrowser.open(url)
-    app.run()
+    app.run(host="0.0.0.0")
     
 
