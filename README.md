@@ -74,6 +74,8 @@ The code needs cuda runtime version 11.1 to run the code. You can download it [h
         warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
         ```
 
+If, at any time, the code stops working, like after a reboot or something, check `nvcc --version` and `gcc --version` to see if they are still working. If not, run the commands above again. You can also place them in the .bashrc file to run them automatically at startup.	No need for the sudo commands in the .bashrc file.
+
 ## Windows : Download the network version. 
 - To setup it, after the installation, run this:
 ```
