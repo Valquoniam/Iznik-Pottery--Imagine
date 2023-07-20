@@ -25,6 +25,12 @@ def main():
     if not os.path.exists("training_results/iznik_snapshot.pkl"):
         subprocess.run(["gdown", "1JaogrbRCWgNDy4MBbZu-SD1j_3ZTe6uY", "-O", "training_results/iznik_snapshot.pkl"])
 
+    if not os.path.exists("results"):
+        os.makedirs("results")
+        os.makedirs("results/images")
+        os.makedirs("results/grids")
+        os.makedirs("results/videos")
+        
     torch.cuda.empty_cache() #type: ignore
 
     # ---------------------------------- PARSER ----------------------------------
