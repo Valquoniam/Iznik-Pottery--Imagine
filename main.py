@@ -30,6 +30,11 @@ def main():
         os.makedirs("results/images")
         os.makedirs("results/grids")
         os.makedirs("results/videos")
+    
+    if not os.path.exists("web_display/static/images"):
+        os.makedirs("web_display/static/images")
+        os.makedirs("web_display/static/grids")
+        os.makedirs("web_display/static/videos")
         
     torch.cuda.empty_cache() #type: ignore
 

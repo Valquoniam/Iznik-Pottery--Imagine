@@ -61,7 +61,7 @@ def display_images():
             
             images = results.get_images(image_source_file)
 
-            results.save_grid(images, (grid_width, grid_height),'../grids/grid.jpg')
+            results.save_grid(images, (grid_width, grid_height),'../results/grids/grid.jpg')
             return send_file('../results/grids/grid.jpg', as_attachment=True)
 
     # Rendre le template HTML et passer les chemins des images à afficher
