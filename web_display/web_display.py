@@ -97,7 +97,6 @@ def delete_images():
 atexit.register(delete_images)
 
 if __name__ == '__main__':
-    print(platform.uname().release.lower())
     if platform.system() == 'Windows':
         # Classic Windows
         url = 'http://127.0.0.1:5000/'

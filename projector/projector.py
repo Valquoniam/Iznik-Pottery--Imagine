@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
 # Utils
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0 #type: ignore
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  #type: ignore
 model = "../training_results/iznik_snapshot.pkl"
 target_image = "../results/images/img_0027.png"
 
@@ -81,7 +81,7 @@ generated_images = []
 best_loss = float('inf')
 converged = False
 
-for i in range(1000):
+for i in range(200):
     optimizer.zero_grad()
     
      # Add noise to the latent vector
