@@ -8,6 +8,7 @@ import sys
 import shutil
 sys.path.append("..")
 import time
+import platform
 
 def run_process(args):
     if args[1] == "web_display.py":
@@ -22,6 +23,9 @@ def run_process(args):
 
 def main():
 
+    if not os.path.exists("results/images"):
+        os.makedirs("results/images")
+        
     if not os.path.exists("training_results/iznik_snapshot.pkl"):
         subprocess.run(["gdown", "1JaogrbRCWgNDy4MBbZu-SD1j_3ZTe6uY", "-O", "training_results/iznik_snapshot.pkl"])
 
@@ -61,14 +65,30 @@ def main():
 
     # Show tensorboard
     parser.add_argument("--tensorboard", "-tb", help="Show tensorboard", default=None, action="store_true")
+    parser.add_argument("--projector", "-pr", help="Show projector", default=None, action="store_true")
     args = parser.parse_args()
 
     pool = multiprocessing.Pool(processes=3)
     if args.tensorboard:
         try:
             pool.apply_async(run_process, [["tensorboard", "--logdir", "training_results", "--host", "127.0.0.1", "--port", "3025"]])
-            time.sleep(3)
-            webbrowser.open("http://127.0.0.1:3025/")
+            time.sleep(5)
+            if platform.system() == 'Windows':
+                # Classic Windows
+                url = 'http://127.0.0.1:3025/'
+                
+            elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower() and "microsoft" in platform.uname().version.lower()):
+                # WSL2
+                url = 'http://172.27.201.41:3025/'
+            else:
+                # Classic Linux
+                url = 'http://127.0.0.1:3025/'
+            
+            if args.projector:
+                url = url + '?darkMode=true#projector'
+
+            webbrowser.open(url)
+            
         except KeyboardInterrupt:
             pass
 

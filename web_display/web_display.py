@@ -10,6 +10,7 @@ import subprocess
 import shutil
 import util.results
 import platform
+from time import sleep
 
 app = Flask(__name__)
 
@@ -61,7 +62,7 @@ def display_images():
             
             images = results.get_images(image_source_file)
 
-            results.save_grid(images, (grid_width, grid_height),'../results/grids/grid.jpg')
+            results.save_grid(images, (grid_width, grid_height),'../grids/grid.jpg')
             return send_file('../results/grids/grid.jpg', as_attachment=True)
 
     # Rendre le template HTML et passer les chemins des images à afficher
@@ -92,7 +93,24 @@ def delete_images():
             except Exception as e:
                 print(f'Error deleting {file_path}: {e}')
 
+@app.route('/tensorboard')
+def show_tb():
+    subprocess.run(["screen", "-dmS", "tensorboardgen", "tensorboard", "--logdir", "../training_results", "--host", "127.0.0.1", "--port", "3025"])
+    if platform.system() == 'Windows':
+        # Classic Windows
+        url = 'http://127.0.0.1:3025/'
+        
+    elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower() and "microsoft" in platform.uname().version.lower()):
+        # WSL2
+        url = 'http://172.27.201.41:3025/'
+    else:
+        # Classic Linux
+        url = 'http://127.0.0.1:3025/'
+    sleep(5)
+    webbrowser.open(url)
     
+    return render_template("index.html")
+
 # Register the function to be called when the program exits
 atexit.register(delete_images)
 

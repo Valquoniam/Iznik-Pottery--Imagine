@@ -1,0 +1,9 @@
+embeddings {
+  metadata_path: "metadata.tsv"
+  sprite {
+    image_path: "sprite.jpg"
+    single_image_dim: 32
+    single_image_dim: 32
+  }
+  tensor_path: "features.tsv"
+}
