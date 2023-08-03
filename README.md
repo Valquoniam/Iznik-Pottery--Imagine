@@ -76,22 +76,21 @@ The code needs cuda runtime version 11.1 to run the code. You can download it [h
 
 If, at any time, the code stops working, like after a reboot or something, check `nvcc --version` and `gcc --version` to see if they are still working. If not, run the commands above again. You can also place them in the .bashrc file to run them automatically at startup.	No need for the sudo commands in the .bashrc file.
 
-## Windows : Download the network version. 
-- To setup it, after the installation, run this:
-```
-setx CUDA_HOME "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
-setx PATH "%PATH%;%CUDA_HOME%\bin"
-setx LD_LIBRARY_PATH "%LD_LIBRARY_PATH%;%CUDA_HOME%\lib64"
-```	
-
-Then run nvcc-version to check if it's working.
-
-
-
 ## The code itself
 
 Once everything is setup, launch `python main.py` to download the pretrained TileGAN model.
 
 Functionalities :
 
-- Generate images : `python main.py -g`. By default, 32 images are stored in results/images
+- Generate images : `python main.py -g`. By default, 32 images are stored in _results/images_.
+    - You can select the number of images you want to generate with `-i`. Ex : `python main.py -g -i 50`
+- Download the dataset I built : `python main.py -d`. It will be stored in _dataset/iznik_.
+- Generate latent vectors : `python main.py -gl`. By default, 10 are created. For that, you need to download the dataset.
+- Open the website I made to display my results : `python main.py -w`.
+    - The website has plenty of functionalities : observe the generated images, generate 32 new ones, save them as a grid, ...
+- Open the tensorboard page to see how the training went : `python main.py -tb`
+    - To open the projector page, to evaluate the diversity of the generated images : `python main.py -tb -pr`
+
+Of course, you can have these arguments in a row. Example : To open the website & the tensorboard page while generating 200 images with a diversity rate of 1.0 :
+
+`python main.py -g -i 200 -t 1.0 -w -tb`
