@@ -49,3 +49,12 @@ def add_index_to_filename(filename):
         new_filename = f"{base}_{index}{ext}"
 
     return new_filename
+
+#For every file in the folder, change its end filename to .png
+def convert_to_png(folder_path):
+    for file_name in os.listdir(folder_path):
+        if file_name.endswith('.jpg') or file_name.endswith('.jpeg'):
+            base, ext = os.path.splitext(file_name)
+            new_file_name = base + '.png'
+            os.rename(os.path.join(folder_path, file_name), os.path.join(folder_path, new_file_name))
+            

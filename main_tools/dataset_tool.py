@@ -1,8 +1,6 @@
 # Tool for creating image datasets.
-
 import os
 import sys
-sys.path.append("..")
 import glob
 import argparse
 import threading
@@ -10,7 +8,6 @@ import six.moves.queue as Queue #type: ignore
 import traceback
 import numpy as np
 import tensorflow as tf
-import tflib #type: ignore
 import PIL.Image
 import cv2
 import io
@@ -62,8 +59,8 @@ class DatasetExporter:
 
         assert img.shape == self.shape
 
-        for lod in range(self.resolution_log2 - 1): #type: ignore
-            resolution = 2 ** (self.resolution_log2 - lod) #type: ignore
+        for lod in range(self.resolution_log2 - 1):
+            resolution = 2 ** (self.resolution_log2 - lod)
             os.makedirs(f"{self.dataset_dir}/{resolution}", exist_ok = True)
             if lod:
                 img = img.astype(np.float32)
@@ -131,7 +128,7 @@ class ThreadPool(object):
         result, args = self.result_queues[func].get()
         if isinstance(result, ExceptionInfo):
             print("\n\nWorker thread caught an exception:\n" + result.traceback)
-            raise result.value #type: ignore
+            raise result.value
         return result, args
 
     def finish(self):
@@ -175,9 +172,9 @@ class ThreadPool(object):
 
 def display(dataset_dir):
     print("Loading dataset %s" % dataset_dir)
-    tflib.init_tf({"gpu_options.allow_growth": True}) #type: ignore
-    dset = dataset.TFRecordDataset(dataset_dir, max_label_size = "full", repeat = False, shuffle_mb = 0) #type: ignore
-    tflib.init_uninitialized_vars() #type: ignore
+    tflib.init_tf({"gpu_options.allow_growth": True}) 
+    dset = dataset.TFRecordDataset(dataset_dir, max_label_size = "full", repeat = False, shuffle_mb = 0)#type: ignore
+    tflib.init_uninitialized_vars()#type: ignore
 
     idx = 0
     while True:
@@ -189,9 +186,9 @@ def display(dataset_dir):
             print("Displaying images")
             cv2.namedWindow("dataset_tool")
             print("Press SPACE or ENTER to advance, ESC to exit")
-        print("\nidx = %-8d\nlabel = %s" % (idx, labels[0].tolist()))
+        print("\nidx = %-8d\nlabel = %s" % (i, labels[0].tolist()))
         img = imgs[0].transpose(1, 2, 0)[:, :, ::-1] # CHW => HWC, RGB => BGR
-        cv2.imshow("dataset_tool", ) #type: ignore
+        cv2.imshow("dataset_tool", )
         idx += 1
         if cv2.waitKey() == 27:
             break
@@ -200,7 +197,7 @@ def display(dataset_dir):
 def extract(dataset_dir, output_dir):
     print("Loading dataset %s" % dataset_dir)
     tflib.init_tf({"gpu_options.allow_growth": True})
-    dset = dataset.TFRecordDataset(dataset_dir, max_label_size = 0, repeat = False, shuffle_mb = 0) #type: ignore
+    dset = dataset.TFRecordDataset(dataset_dir, max_label_size = 0, repeat = False, shuffle_mb = 0)
     tflib.init_uninitialized_vars()
 
     print("Extracting images to %s" % output_dir)
@@ -225,9 +222,9 @@ def compare(dataset_dir_a, dataset_dir_b, ignore_labels):
     max_label_size = 0 if ignore_labels else "full"
     print("Loading dataset %s" % dataset_dir_a)
     tflib.init_tf({"gpu_options.allow_growth": True})
-    dset_a = dataset.TFRecordDataset(dataset_dir_a, max_label_size = max_label_size, repeat = False, shuffle_mb = 0) #type: ignore
+    dset_a = dataset.TFRecordDataset(dataset_dir_a, max_label_size = max_label_size, repeat = False, shuffle_mb = 0)
     print("Loading dataset %s" % dataset_dir_b)
-    dset_b = dataset.TFRecordDataset(dataset_dir_b, max_label_size = max_label_size, repeat = False, shuffle_mb = 0) #type: ignore
+    dset_b = dataset.TFRecordDataset(dataset_dir_b, max_label_size = max_label_size, repeat = False, shuffle_mb = 0)
     tflib.init_uninitialized_vars()
 
     print("Comparing datasets")
@@ -253,7 +250,7 @@ def compare(dataset_dir_a, dataset_dir_b, ignore_labels):
             identical_imgs += 1
         else:
             print("Image %d is different" % idx)
-        if labels_a.shape == labels_b.shape and np.all(labels_a == labels_b): #type: ignore
+        if labels_a.shape == labels_b.shape and np.all(labels_a == labels_b):
             identical_labels += 1
         else:
             print("Label %d is different" % idx)
@@ -399,7 +396,7 @@ def create_lsun(dataset_dir, lmdb_dir, resolution = 256, max_imgs = None):
                     img = img[(img.shape[0] - crop) // 2 : (img.shape[0] + crop) // 2, 
                         (img.shape[1] - crop) // 2 : (img.shape[1] + crop) // 2]
                     img = PIL.Image.fromarray(img, "RGB")
-                    img = img.resize((resolution, resolution), PIL.Image.ANTIALIAS) #type: ignore
+                    img = img.resize((resolution, resolution), PIL.Image.ANTIALIAS)
                     img = np.asarray(img)
                     img = img.transpose([2, 0, 1]) # HWC => CHW
                     tfr.add_img(img)
@@ -436,7 +433,7 @@ def create_lsun_wide(dataset_dir, lmdb_dir, width = 512, height = 384, max_imgs 
 
                     img = img[(img.shape[0] - ch) // 2 : (img.shape[0] + ch) // 2]
                     img = PIL.Image.fromarray(img, "RGB")
-                    img = img.resize((width, height), PIL.Image.ANTIALIAS) #type: ignore
+                    img = img.resize((width, height), PIL.Image.ANTIALIAS)
                     img = np.asarray(img)
                     img = img.transpose([2, 0, 1]) # HWC => CHW
 
@@ -477,7 +474,7 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
         error("Expected to find %d images" % expected_imgs)
     with open(os.path.join(celeba_dir, "Anno", "list_landmarks_celeba.txt"), "rt") as file:
         landmarks = [[float(value) for value in line.split()[1:]] for line in file.readlines()[2:]]
-        landmarks = np.float32(landmarks).reshape(-1, 5, 2) #type: ignore
+        landmarks = np.float32(landmarks).reshape(-1, 5, 2)
 
     print("Loading CelebA-HQ deltas from '%s'" % delta_dir)
     import scipy.ndimage
@@ -485,10 +482,10 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
     import bz2
     import zipfile
     import base64
-    import cryptography.hazmat.primitives.hashes #type: ignore
-    import cryptography.hazmat.backends #type: ignore
-    import cryptography.hazmat.primitives.kdf.pbkdf2#type: ignore
-    import cryptography.fernet#type: ignore
+    import cryptography.hazmat.primitives.hashes
+    import cryptography.hazmat.backends
+    import cryptography.hazmat.primitives.kdf.pbkdf2
+    import cryptography.fernet
     expected_zips = 30
     if len(glob.glob(os.path.join(delta_dir, "delta*.zip"))) != expected_zips:
         error("Expected to find %d zips" % expected_zips)
@@ -539,7 +536,7 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
         shrink = int(np.floor(0.5 / zoom))
         if shrink > 1:
             size = (int(np.round(float(img.size[0]) / shrink)), int(np.round(float(img.size[1]) / shrink)))
-            img = img.resize(size, PIL.Image.ANTIALIAS) #type: ignore
+            img = img.resize(size, PIL.Image.ANTIALIAS)
             quad /= shrink
             zoom *= shrink
 
@@ -556,7 +553,7 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
         # Simulate super-resolution
         superres = int(np.exp2(np.ceil(np.log2(zoom))))
         if superres > 1:
-            img = img.resize((img.size[0] * superres, img.size[1] * superres), PIL.Image.ANTIALIAS) #type: ignore
+            img = img.resize((img.size[0] * superres, img.size[1] * superres), PIL.Image.ANTIALIAS)
             quad *= superres
             zoom /= superres
 
@@ -567,7 +564,7 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
             max(pad[3] - img.size[1] + border, 0))
         if max(pad) > border - 4:
             pad = np.maximum(pad, int(np.round(1024 * 0.3 / zoom)))
-            img = np.pad(np.float32(img), ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), "reflect") #type: ignore
+            img = np.pad(np.float32(img), ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), "reflect")
             h, w, _ = img.shape
             y, x, _ = np.mgrid[:h, :w, :1]
             mask = 1.0 - np.minimum(np.minimum(np.float32(x) / pad[0], np.float32(y) / pad[1]), 
@@ -580,7 +577,7 @@ def create_celebahq(dataset_dir, celeba_dir, delta_dir, num_threads = 4, num_tas
 
         # Transform
         img = img.transform((4096, 4096), PIL.Image.QUAD, (quad + 0.5).flatten(), PIL.Image.BILINEAR)
-        img = img.resize((1024, 1024), PIL.Image.ANTIALIAS) #type: ignore
+        img = img.resize((1024, 1024), PIL.Image.ANTIALIAS)
         img = np.asarray(img).transpose(2, 0, 1)
 
         # Verify MD5
@@ -656,11 +653,11 @@ def create_from_imgs(dataset_dir, img_dir, format = "png", shuffle = False, rati
         for idx in trange(max_imgs):
             img = PIL.Image.open(img_filenames[order[idx]]).convert("RGB")
 
-            img = misc.crop_max_rectangle(img, ratio) #type: ignore
+            img = misc.crop_max_rectangle(img, ratio)
             img = misc.pad_min_square(img)
 
             pow2size = 2 ** int(np.round(np.log2(img.size[0])))
-            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS) #type: ignore
+            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS)
 
             img = np.asarray(img)
             if channels == 1:
@@ -678,11 +675,11 @@ def create_from_tfds(dataset_dir, dataset_name, ratio = None, max_imgs = None):
         for i, ex in tqdm(enumerate(tfds.as_numpy(ds)), total = max_imgs):
             img = PIL.Image.fromarray(ex["image"])
 
-            img = misc.crop_max_rectangle(img, ratio) #type: ignore
+            img = misc.crop_max_rectangle(img, ratio)
             img = misc.pad_min_square(img)
 
             pow2size = 2 ** int(np.round(np.log2(img.size[0])))
-            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS) #type: ignore
+            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS)
 
             img = np.asarray(img)
             img = img.transpose([2, 0, 1]) # HWC => CHW
@@ -712,11 +709,11 @@ def create_from_tfrecords(dataset_dir, tfrecords_dir, ratio = None, max_imgs = N
         for i, img in tqdm(enumerate(tfds.as_numpy(dataset)), total = max_imgs):
             img = PIL.Image.fromarray(img)
 
-            img = misc.crop_max_rectangle(img, ratio) #type: ignore
+            img = misc.crop_max_rectangle(img, ratio)
             img = misc.pad_min_square(img)
 
             pow2size = 2 ** int(np.round(np.log2(img.size[0])))
-            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS) #type: ignore
+            img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS)
 
             img = np.asarray(img)
             img = img.transpose([2, 0, 1]) # HWC => CHW
@@ -737,11 +734,11 @@ def create_from_lmdb(dataset_dir, lmdb_dir, ratio = None, max_imgs = None):
                 try:
                     img = PIL.Image.open(io.BytesIO(value))
 
-                    img = misc.crop_max_rectangle(img, ratio) #type: ignore
+                    img = misc.crop_max_rectangle(img, ratio)
                     img = misc.pad_min_square(img)
 
                     pow2size = 2 ** int(np.round(np.log2(img.size[0])))
-                    img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS) #type: ignore
+                    img = img.resize((pow2size, pow2size), PIL.Image.ANTIALIAS)
 
                     img = np.asarray(img)
                     img = img.transpose([2, 0, 1]) # HWC => CHW
@@ -758,7 +755,7 @@ def create_from_lmdb(dataset_dir, lmdb_dir, ratio = None, max_imgs = None):
 def create_from_npy(dataset_dir, npy_filename, shuffle = False, max_imgs = None):
     print("Loading NPY archive from %s" % npy_filename)
     if max_imgs is None:
-        max_imgs = npy_data.shape[0] #type: ignore
+        max_imgs = npy_data.shape[0]
 
     with open(npy_filename, "rb") as npy_file:
         npy_data = np.load(npy_file)
@@ -774,7 +771,7 @@ def create_from_hdf5(dataset_dir, hdf5_filename, shuffle = False, max_imgs = Non
     import h5py # conda install h5py
     print("Loading HDF5 archive from %s" % hdf5_filename)
     if max_imgs is None:
-        max_imgs = npy_data.shape[0] #type: ignore
+        max_imgs = npy_data.shape[0]
 
     with h5py.File(hdf5_filename, "r") as hdf5_file:
         hdf5_data = max([value for key, value in hdf5_file.items() if key.startswith("data")], 
@@ -902,7 +899,7 @@ def execute_cmdline(argv):
 
     args = parser.parse_args(argv[1:] if len(argv) > 1 else ["-h"])
     func = globals()[args.command]
-    del args.command #type: ignore
+    del args.command
     func(**vars(args))
 
 if __name__ == "__main__":

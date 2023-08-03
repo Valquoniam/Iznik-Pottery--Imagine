@@ -9,11 +9,13 @@ import shutil
 sys.path.append("..")
 import time
 import platform
+import gdown
+from util.results import convert_to_png
 
 def run_process(args):
     if args[1] == "web_display.py":
         os.chdir("web_display")
-    if args[1] == "generate.py":
+    if args[1] == "generate.py" or args[1] == "run_network.py":
         os.chdir("main_tools")
     try:
         subprocess.run(args)
@@ -45,6 +47,7 @@ def main():
     # ---------------------------------- PARSER ----------------------------------
     parser = argparse.ArgumentParser(description='All TileGAN functionalities')
     gen_group = parser.add_argument_group('required arguments to generate images')
+    
     # To generate images
     gen_group.add_argument("--generate", "-g", help="Generate images", default=None, action="store_true")
     gen_group.add_argument("--model", "-m", help="Filename for a snapshot to resume", default="../training_results/iznik_snapshot.pkl", type=str)
@@ -60,12 +63,18 @@ def main():
     gen_group.add_argument("--ratio", "-r", help="Crop ratio for output images (default: %(default)s)",
                            default=1.0, type=float)
 
+    # To generate latent vectors
+    parser.add_argument("--generate-latent", "-gl", help="Generate latent vectors", default=None, action="store_true")
     # Web display
     parser.add_argument("--web_display", "-w", help="Display images on web", default=None, action="store_true")
 
     # Show tensorboard
     parser.add_argument("--tensorboard", "-tb", help="Show tensorboard", default=None, action="store_true")
     parser.add_argument("--projector", "-pr", help="Show projector", default=None, action="store_true")
+    
+    # Download dataset
+    parser.add_argument("--dataset", "-d", help="Download dataset", default=None, action="store_true")
+    
     args = parser.parse_args()
 
     pool = multiprocessing.Pool(processes=3)
@@ -101,13 +110,37 @@ def main():
                                             "--truncation-psi", str(args.truncation_psi), "--ratio", str(args.ratio), "--images-num", str(args.images_num)]])
         except KeyboardInterrupt:
             pass
-
+    
     if args.web_display:
         try:
             pool.apply_async(run_process, [["python", "web_display.py", "-f", "../results/images"]])
         except KeyboardInterrupt:
             pass
-
+        
+    if args.generate_latent:
+        try:
+            pool.apply_async(run_process, [["python", "run_network.py", "--pretrained-pkl", args.model, "--gpus", args.gpus, "--vis", "--dataset", "iznik", "--vis-latents"]])
+        except KeyboardInterrupt:
+            pass
+        #PD gros PD
+    
+    if args.dataset:
+        try:
+            if os.path.exists("iznik"):
+                shutil.rmtree("iznik")
+            if not os.path.exists("datasets/iznik"):
+                gdown.download(" https://drive.google.com/uc?id=18DTw7eVQa1D96Nno1-uOwjBgfJl7Ihy7", "dataset.zip", quiet=False, use_cookies=False)
+                subprocess.run(["unzip", "dataset.zip"])
+                subprocess.run(["rm", "dataset.zip"])
+                os.rename("Iznik_tiles", "iznik")
+                convert_to_png("iznik")
+                os.chdir("main_tools")
+                subprocess.run(["python","prepare_data.py", "--task", "iznik", "--images-dir", "../iznik", "--format", "png"])
+                subprocess.run(["mv", "datasets", "../datasets"])
+                shutil.rmtree("../iznik")
+        except KeyboardInterrupt:
+            pass
+    
     try:
         pool.close()
         pool.join()

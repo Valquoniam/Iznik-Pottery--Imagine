@@ -74,14 +74,14 @@ noise_std = 0.01
 
 # Optimize to match target image features
 target_feats = inv_model(target_img).to(device)
-optimizer = torch.optim.Adam([latent], lr=0.01) # type: ignore
+optimizer = torch.optim.Adam([latent], lr=0.002) # type: ignore
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=100, factor=0.1, verbose=True) # type: ignore
 
 generated_images = []
 best_loss = float('inf')
 converged = False
 
-for i in range(200):
+for i in range(400):
     optimizer.zero_grad()
     
      # Add noise to the latent vector
@@ -104,7 +104,7 @@ for i in range(200):
 
 
     # Print loss advancement
-    if i % 100 == 0:
+    if i % 10 == 0:
         print('Step {} : loss {}'.format(i, loss.item()))
 
     """# Early stopping

@@ -1,15 +1,13 @@
 # Train a GANformer model (pytorch version)
 
 import os
-import re
+import sys
 import json
 import tempfile
-# import torch
+sys.path.append("..")
 from training import misc
-import importlib.util
-spec = importlib.util.spec_from_file_location('dnnlib', '../dnnlib')
-dnnlib = importlib.util.module_from_spec(importlib.util.spec_from_file_location('dnnlib', '../dnnlib')) # type: ignore
-spec.loader.exec_module(dnnlib) #type: ignore
+
+import dnnlib
 from dnnlib import EasyDict
 
 import argparse

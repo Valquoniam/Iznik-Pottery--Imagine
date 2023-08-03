@@ -9,7 +9,7 @@ import tqdm
 import time
 import json
 import glob
-import gdown #type: ignore
+import gdown
 import urllib
 import zipfile
 import hashlib
