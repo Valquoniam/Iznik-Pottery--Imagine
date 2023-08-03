@@ -27,7 +27,7 @@ from torch_utils.ops import conv2d_gradfix
 from training import visualize
 from training import misc 
 
-import main_tools.loader
+import main_tools.loader as loader
 from metrics import metric_main
 from metrics import metric_utils
 

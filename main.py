@@ -10,13 +10,28 @@ sys.path.append("..")
 import time
 import platform
 import gdown
-from util.results import convert_to_png
+from util.results import convert_to_png 
+
+from contextlib import contextmanager
+import sys, os
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stderr = sys.stderr
+        sys.stderr= devnull
+        try:  
+            yield
+        finally:
+            sys.stderr = old_stderr
 
 def run_process(args):
     if args[1] == "web_display.py":
         os.chdir("web_display")
     if args[1] == "generate.py" or args[1] == "run_network.py":
         os.chdir("main_tools")
+    if args[4] == "generate.py" or args[4] == "run_network.py":
+        os.chdir("main_tools")    
     try:
         subprocess.run(args)
     except KeyboardInterrupt:
@@ -119,10 +134,19 @@ def main():
         
     if args.generate_latent:
         try:
-            pool.apply_async(run_process, [["python", "run_network.py", "--pretrained-pkl", args.model, "--gpus", args.gpus, "--vis", "--dataset", "iznik", "--vis-latents"]])
-        except KeyboardInterrupt:
+            os.makedirs("../results/latent_vectors", exist_ok=True)
+            run_process(["screen", "-dmS", "generate_lat", "python", "run_network.py", "--pretrained-pkl", args.model, "--gpus", args.gpus, "--vis", "--result-dir", "../results/latent_vectors", "--dataset", "iznik", "--vis-latents", "--vis-section-size", "10"])
+            while not os.path.exists("../results/latent_vectors/exp-000/visuals/latents-z"):
+                time.sleep(1)
+            if os.path.exists("../results/latent_vectors/exp-000/visuals"):
+                time.sleep(5)
+            shutil.move("../results/latent_vectors/exp-000/visuals", "../results/visuals")
+            shutil.rmtree("../results/latent_vectors")
+            os.rename("../results/visuals", "../results/latent_vectors")
+            print("Latent vectors generated successfully!")
+                
+        except ValueError:
             pass
-        #PD gros PD
     
     if args.dataset:
         try:

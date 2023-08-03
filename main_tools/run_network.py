@@ -144,7 +144,7 @@ def setup_config(run_dir, **args):
     
     dataset_args = EasyDict(
         class_name     = "training.dataset.ImageFolderDataset", 
-        path           = f"{args.data_dir}/{args.dataset}",
+        path           = f"../{args.data_dir}/{args.dataset}",
         max_items      = args.train_images_num, 
         resolution     = args.resolution,
         ratio          = args.ratio,

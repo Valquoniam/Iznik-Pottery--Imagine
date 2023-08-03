@@ -50,6 +50,11 @@ def mkdir(d):
 # Save a numpy file
 def save_npy(mat, filename):
     with open(filename, 'wb') as f:
+        #If it's a cuda tensor, convert it to a numpy array
+        if hasattr(mat, 'cpu'):
+            mat = mat.cpu().numpy()
+        else:
+            mat = np.array(mat)
         np.save(f, mat)
 
 # Saves a list of numpy arrays with ordering and according to a path template
