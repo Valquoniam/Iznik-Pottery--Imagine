@@ -3,14 +3,17 @@ import os
 import pickle
 import re
 import imageio
-
+import sys
+sys.path.append("..")
 import numpy as np
 from PIL import Image
 import math
 import main_tools.loader as loader
 import dnnlib
-
+import torch
 import tensorflow as tf
+
+device = torch.device('cuda')
 #----------------------------------------------------------------------------
 
 def create_image_grid(images, grid_size=None):
@@ -51,8 +54,8 @@ def generate_images(network_pkl, truncation_psi, outdir, class_idx, dlatents1_np
     Gs = loader.load_network(network_pkl, eval=True)["Gs"].to(device)  # type: ignore
 
     os.makedirs(outdir, exist_ok=True)
-    start = np.load(dlatents1_npz)['dlatents']
-    end = np.load(dlatents2_npz)['dlatents']
+    start = np.load(dlatents1_npz)
+    end = np.load(dlatents2_npz)
     transition_frames = 300
     mp4_fps = 60
     grid_size = [1,1]
@@ -72,7 +75,7 @@ def generate_images(network_pkl, truncation_psi, outdir, class_idx, dlatents1_np
         mu1 = min(max(0, 1 - math.cos(math.pi * transition_i / maxindex)), 2) / 2  # sine interpolation
         lat = np.multiply(start, 1.0-mu1)+ np.multiply(end, mu1)
         labels = np.zeros([lat.shape[0], 0], np.float32)
-        images = Gs.components.synthesis.run(lat, output_transform=dict(func=convert_images_to_uint8, nchw_to_nhwc=True), randomize_noise=False)
+        images = Gs.synthesis(lat, output_transform=dict(func=convert_images_to_uint8, nchw_to_nhwc=True), randomize_noise=False)
         writer.append_data(images[0])
 
 
