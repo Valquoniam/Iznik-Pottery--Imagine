@@ -31,13 +31,10 @@ def run_process(args):
         os.chdir("web_display")
     if args[1] == "generate.py" or args[1] == "run_network.py":
         os.chdir("main_tools")
-    if args[4] == "generate.py" or args[4] == "run_network.py":
-        os.chdir("main_tools")    
-    try:
-        subprocess.run(args)
-    except KeyboardInterrupt:
-        pass
-
+    if len(args) > 4:
+        if args[4] == "generate.py" or args[4] == "run_network.py":
+            os.chdir("main_tools")    
+    subprocess.run(args)
 
 def main():
 
@@ -81,6 +78,7 @@ def main():
 
     # To generate latent vectors
     parser.add_argument("--generate-latent", "-gl", help="Generate latent vectors", default=None, action="store_true")
+    
     # Web display
     parser.add_argument("--web_display", "-w", help="Display images on web", default=None, action="store_true")
 

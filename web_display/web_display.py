@@ -116,20 +116,19 @@ atexit.register(delete_images)
 
 if __name__ == '__main__':
     
-    print(platform.system())
-    
     if platform.system() == 'Windows':
         # Classic Windows
         url = 'http://127.0.0.1:5000/'
         
     elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower()):
         # WSL2
-        print("oue wsl")
         url = 'http://172.27.201.41:5000/'
     else:
         # Classic Linux
         url = 'http://127.0.0.1:5000/'
-    webbrowser.open(url)
+    
     app.run(host="0.0.0.0")
+    sleep(5)
+    webbrowser.open("localhost:5000")
     
 
