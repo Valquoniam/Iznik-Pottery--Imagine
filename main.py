@@ -15,6 +15,7 @@ from util.results import convert_to_png
 from contextlib import contextmanager
 import sys, os
 
+
 @contextmanager
 def suppress_stdout():
     with open(os.devnull, "w") as devnull:
