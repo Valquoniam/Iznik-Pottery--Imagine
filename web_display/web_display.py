@@ -114,7 +114,6 @@ def show_tb():
 # Register the function to be called when the program exits
 atexit.register(delete_images)
 
-print("lo")
 if platform.system() == 'Windows':
     # Classic Windows
     url = 'http://127.0.0.1:5000/'
@@ -127,8 +126,6 @@ else:
     url = 'http://127.0.0.1:5000/'
 
 app.run(host="0.0.0.0")
-sleep(5)
-print(url)
-webbrowser.open("localhost:5000")
+webbrowser.open("url")
     
 
