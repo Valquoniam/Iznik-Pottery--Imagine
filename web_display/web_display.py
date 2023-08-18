@@ -13,11 +13,11 @@ import platform
 from time import sleep
 
 app = Flask(__name__)
-
+"""
 import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
-
+"""
 # Récupérer le nom du fichier source d'images en tant qu'argument
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='Fichier source d\'images')
@@ -114,21 +114,21 @@ def show_tb():
 # Register the function to be called when the program exits
 atexit.register(delete_images)
 
-if __name__ == '__main__':
+print("lo")
+if platform.system() == 'Windows':
+    # Classic Windows
+    url = 'http://127.0.0.1:5000/'
     
-    if platform.system() == 'Windows':
-        # Classic Windows
-        url = 'http://127.0.0.1:5000/'
-        
-    elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower()):
-        # WSL2
-        url = 'http://172.27.201.41:5000/'
-    else:
-        # Classic Linux
-        url = 'http://127.0.0.1:5000/'
-    
-    app.run(host="0.0.0.0")
-    sleep(5)
-    webbrowser.open("localhost:5000")
+elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.lower()):
+    # WSL2
+    url = 'http://172.27.201.41:5000/'
+else:
+    # Classic Linux
+    url = 'http://127.0.0.1:5000/'
+
+app.run(host="0.0.0.0")
+sleep(5)
+print(url)
+webbrowser.open("localhost:5000")
     
 
