@@ -124,8 +124,8 @@ elif platform.system() == 'Linux' and ("microsoft" in platform.uname().release.l
 else:
     # Classic Linux
     url = 'http://127.0.0.1:5000/'
-
+webbrowser.open(url)
 app.run(host="0.0.0.0")
-webbrowser.open("url")
-    
+
+
 
