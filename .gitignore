@@ -3,3 +3,4 @@ datasets
 results/
 static/
 clustering/clusters
+dataset_gen/found_images
